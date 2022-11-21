@@ -10,7 +10,6 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
 using System.IdentityModel.Tokens.Jwt;
 using System;
-using System.Linq;
 using JwsAuthForApi.Repositories;
 using Newtonsoft.Json;
 
