@@ -15,12 +15,12 @@ namespace JwsAuthForApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class Auth1Controller : ControllerBase
+    public class StaticAuthController : ControllerBase
     {
         public static User1 user = new User1();
         private readonly IConfiguration _configuration;
 
-        public Auth1Controller(IConfiguration configuration)
+        public StaticAuthController(IConfiguration configuration)
         {
             _configuration = configuration;
         }
