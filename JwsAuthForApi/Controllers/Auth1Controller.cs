@@ -10,49 +10,29 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
 using System.IdentityModel.Tokens.Jwt;
 using System;
-using System.Linq;
-using JwsAuthForApi.Repositories;
-using Newtonsoft.Json;
 
 namespace JwsAuthForApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController : ControllerBase
+    public class Auth1Controller : ControllerBase
     {
+        public static User1 user = new User1();
         private readonly IConfiguration _configuration;
-        private readonly AuthApiContext _authApiContext;
 
-        public AuthController(IConfiguration configuration, AuthApiContext authApiContext)
+        public Auth1Controller(IConfiguration configuration)
         {
             _configuration = configuration;
-            _authApiContext = authApiContext;
         }
 
         [HttpPost("register")]
         public async Task<ActionResult<User1>> Registor(UserDto model)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest("To short username.");
-            }
-
-            if(_authApiContext.Users.FirstOrDefault(item => item.Username == model.Username) != null)
-            {
-                return BadRequest("User with such username is already exist.");
-            }
-
             CreatePasswordHash(model.Password, out byte[] passwordHash, out byte[] passwordSalt);
 
-            User user = new User()
-            {
-                Username = model.Username,
-                PasswordHash = JsonConvert.SerializeObject(passwordHash),
-                PasswordSalt = JsonConvert.SerializeObject(passwordSalt)
-            };
-
-            _authApiContext.Users.Add(user);
-            _authApiContext.SaveChanges();
+            user.Username = model.Username;
+            user.PasswordHash = passwordHash;
+            user.PasswordSalt = passwordSalt;
 
             return Ok(user);
         }
@@ -60,15 +40,12 @@ namespace JwsAuthForApi.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<string>> Login(UserDto model)
         {
-            var user = _authApiContext.Users.FirstOrDefault(item => item.Username == model.Username);
-            if (user == null)
+            if(user.Username != model.Username)
             {
-                return BadRequest("User not found.");
+                return BadRequest("User not found.");             
             }
 
-            if (!VerifyPasswordHash(model.Password,
-                    JsonConvert.DeserializeObject<byte[]>(user.PasswordHash),
-                    JsonConvert.DeserializeObject<byte[]>(user.PasswordSalt)))
+            if(!VerifyPasswordHash(model.Password, user.PasswordHash, user.PasswordSalt))
             {
                 return BadRequest("Wrong password.");
             }
@@ -79,7 +56,7 @@ namespace JwsAuthForApi.Controllers
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
         {
-            using (var hmac = new HMACSHA512())
+            using(var hmac = new HMACSHA512())
             {
                 passwordSalt = hmac.Key;
                 passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
@@ -95,7 +72,7 @@ namespace JwsAuthForApi.Controllers
             }
         }
 
-        private string CreateToken(User user)
+        private string CreateToken(User1 user)
         {
             List<Claim> claims = new List<Claim>
             {
